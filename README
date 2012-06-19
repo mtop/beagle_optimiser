@@ -16,21 +16,21 @@ Usage:
 beagle_optimiser_0.9.2 [-r] [-q] [-d] [--nogpu] [-f] FILE [-t] NAME [-n] N -i [file1 file2 ..]
 
 Options:
---version				show program's version number and exit
--h, --help				show this help message and exit
--q, --quiet				Minimum or no output to STDOUT
--r, --run				Run beast with the best speed settings immediately
-						after the test
--f FILE, --file=FILE	Write output to FILE [bo_output.txt]
+--version               Show program's version number and exit.
+-h, --hele              Show this help message and exit.
+-q, --quiet             Minimum or no output to STDOUT.
+-r, --run               Run beast with the best speed settings immediately
+                        after the test.
+-f FILE, --file=FILE    Write output to FILE [bo_output.txt].
 -t NAME, --tmpdir=NAME
-						Name of temporary directory for output files. This
-						directory will be removed after the beagle tests are
-						done if the --dev flag was not invoked [.bss_tmp]
--n N, --ngen=N			Chainlength for the Beast runs [10000]
---nogpu					Do not use the "-Beagle_GPU" flag in the test
--d, --dev				Produce more output to STDOUT and save all temporary
-						files
--i, --input				Followed by one or several input files
+                        Name of temporary directory for output files. This
+                        directory will be removed after the beagle tests are
+                        done if the --dev flag was not invoked [.bss_tmp].
+-n N, --ngen=N          Chainlength for the Beast runs [10000].
+--nogpu                 Do not use the "-Beagle_GPU" flag in the test.
+-d, --dev               Produce more output to STDOUT and save all temporary
+                        files.
+-i, --input             Followed by one or several input files.
 
 
 
