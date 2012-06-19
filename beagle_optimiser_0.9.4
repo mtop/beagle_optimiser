@@ -1,0 +1,316 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#	Beagle_optimiser is a program written in Python that takes 
+#	an XML input file prepared for Beast, and finds the beagle option 
+#	that will result in the shortest analysis time of that file.
+#
+#	Copyright (C) 2011 Mats Topel.
+#
+#	Citation: If you use this version of the program, please cite;
+#	Mats T"opel (2011) Open Laboratory Notebook. www.matstopel.se
+#
+#	This program is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+#	(at your option) any later version.
+#	
+#	This program is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+from sys import exit
+import subprocess
+import time
+import timeit
+import os
+from operator import itemgetter
+from optparse import OptionParser
+import fileinput
+from xml.dom.minidom import parse, parseString
+#import xml.dom.minidom as dom
+
+
+
+# Figure out the name(s) of the input files
+def in_files(option, opt_str, value, parser):
+	assert value is None
+	value = []
+
+	for arg in parser.rargs:
+		# stop on --foo like options
+		if arg[:2] == "--" and len(arg) > 2:
+			break
+		# stop on -a, but not on -3 or -3.0
+		if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
+			break
+		value.append(arg)
+
+	del parser.rargs[:len(value)]
+	setattr(parser.values, option.dest, value)
+
+
+
+# Options, arguments and help
+usage = "\n		%prog [-r] [-q] [-d] [--nogpu] [-f] FILE [-t] NAME [-n] N -i [file1 file2 ..]"
+
+#epilog = """ TODO
+#description = """ TODO
+
+parser = OptionParser(usage=usage, version="%prog v.0.9.4")
+
+# Run the program with minimum or no output to stdout
+parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=False,
+					help="Minimum or no output to STDOUT")
+
+# Run beast with the best speed setings immediately after test
+parser.add_option("-r", "--run",  action="store_true", dest="run", default=False,
+					help="Run beast with the best speed settings immediately after the test")	
+
+# Set the name of the output file
+parser.add_option("-f", "--file", dest="output_file", metavar="FILE", default="bo_output.txt",
+					help="Write output to FILE [%default]")
+
+# Set the name for the directory to store temp files in
+parser.add_option("-t", "--tmpdir", dest="tmp_dir", metavar="NAME", default=".bss_tmp",
+					help="Name of temporary directory for output files. "
+					"This directory will be removed after the beagle tests are done if the "
+					"--dev flag was not invoked [%default]")
+
+# Set the chainlength to use for the tests
+parser.add_option("-n", "--ngen", type="int", metavar="N", dest="chain_length", default="10000",
+					help="Chainlength for the Beast runs [%default]")
+
+# Do not test beast with the "-Beagle_GPU" option
+parser.add_option("--nogpu", action="store_false", default=True, dest="gpu",
+					help='Do not use the "-Beagle_GPU" flag in the test')
+
+# Run the program in dev. mode (more output, all tmp-files saved)
+parser.add_option("-d", "--dev", action="store_true", default=False, dest="devel",
+					help="Produce more output to STDOUT and save all temporary files")
+				
+parser.add_option("-i", "--input", action="callback", callback=in_files, dest="input_files",
+					help="Followed by one or several input files")
+
+# TODO: seed
+
+(options, args) = parser.parse_args()
+
+
+
+# Miscellaneous
+beast_option = ["", "-java", "-beagle_GPU", "-beagle_CPU", "-beagle_SSE", "-beagle_instances 2", "-beagle_instances 4","-beagle_instances 8", "-beagle_instances 10", "-beagle_instances 12", "-beagle_instances 14", "-beagle_instances 16"]
+
+
+
+# Functions
+
+# Determin if the input file is in xml (BEAST) or NEXUS (MrBayes) format
+
+#def file_format():
+#	for file in options.input_files: 			# Check the file format for each of the imput files
+#		format = f.readline(file)
+#		if format == "<?xml*":
+#			print "This is an XML file"			# Dev. note
+#		if format == "#NEXUS":
+#			print "This is a Nexus file"
+	
+
+
+# Gather information about the available BEAGLE resources on the system
+def beagle_info():		
+	out = subprocess.Popen(["beast", "-beagle_info"], stdout=subprocess.PIPE)
+	info = out.communicate()[0]
+	#print info # debug
+	info_output = info.partition("BEAGLE resources available:")[2]
+	#print info_output # debug
+
+	# Save beagle information to file
+	output = open('%s' % options.output_file, "a")
+	output.write("### Beagle info. ###\n")
+	output.write('%s' % info_output)
+	output.close()
+
+
+
+# Determin which version of java is installed
+def java_version():	
+	# TODO: Check that this works with different types of java 
+	# SUN java version point to stderr. Hence, "stderr=subprocess.STDOUT" below.
+	out = subprocess.Popen(["java", "-version"], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+	java_version = out.communicate()[0]
+	#print java_version # debug
+
+	# Save java information to file
+	output = open('%s' % options.output_file, "a")
+	output.write("### Java info. ###\n")
+	output.write('%s' % java_version)
+	output.close()
+
+
+
+# Gather information about the CPU, memory etc. on the system
+def system_info(): 
+	out = subprocess.Popen("uname", stdout=subprocess.PIPE)
+	kernel = out.communicate()[0]
+	#print kernel # debug
+	if kernel == "Darwin\n":	# If this is a Mac OSX system ...
+		out = subprocess.Popen(["system_profiler", "SPHardwareDataType"], stdout=subprocess.PIPE)
+		hardware = out.communicate()[0]
+		#print hardware	# debug
+	elif kernel == "Linux\n":
+		#print "This is a Linux box!" # debug
+		out = subprocess.Popen(["cat", "/proc/cpuinfo"], stdout=subprocess.PIPE)
+		hardware = out.communicate()[0]
+		#print hardware # debug
+	else:
+		print "[WW] Unknown System architecture."
+	
+	# Save system information to file
+	output = open('%s' % options.output_file, "a")
+	output.write("\n")
+	output.write("### System info. ###\n")
+	output.write("Kernel: " '%s' % kernel)
+	output.write("\n")
+	output.write('%s' % hardware)
+	output.close()
+
+
+
+# Run the Beast beagle tests
+def beast_test():
+	if options.gpu == False:
+		beast_option.pop(0)
+	
+	# Hack to define the dictionary "time_dict".
+	time_dict = {'-beagle_SSE':'0'}										
+	
+	for file in options.input_files:
+		
+		# From the infile, get the number of unique patterns in the aligned matrix.
+		for line in open(file):
+			if "npatterns" in line:
+				patterns = line.partition("=")
+				patterns = patterns[2]
+				patterns = patterns.partition("-->")
+				unique_patterns = patterns[0]
+
+			if "ntax" and "nchar" in line:
+				taxa = line.partition("ntax=")
+				taxa = taxa[2]
+				ntaxa = taxa.partition("nchar=")
+				ntaxa = ntaxa[0]
+
+				sites = line.partition("nchar=")
+				sites = sites[2]
+				nsites = sites.partition("-->")
+				nsites = nsites[0]
+
+		for option in beast_option:
+			
+			# Run beast
+			args = ["beast", "-overwrite", "-seed 666", option, '.%s' % file]
+			t0 = os.times()[2] + os.times()[3]
+			out = subprocess.Popen(args).wait()
+			cpu_time = os.times()[2] + os.times()[3] - t0
+		
+			# "Execution time" is stored in the dictionary time_dict.
+			if option == "":
+				time_dict[" Native library"] = cpu_time
+			else:
+				time_dict[option] = cpu_time								
+			#print time_dict.items()	# debug
+			#print time_dict # debug
+		
+		time_for_R = time_dict.items()
+		sorted_time = sorted(time_dict.items(), key=itemgetter(1))
+		#print sorted_time # debug	
+			# TODO: Perhaps recalculate time from seconds to minutes.
+		if options.run == False:
+			# Print results of the test to stdout
+			print ""
+			print ""
+			print "_______________________________________"
+			print ""
+			print '%-21s %-6s' % ("File: ", file)
+			print '%-21s %-6s' % ("Sequences: ", ntaxa)
+			print '%-21s %-6s' % ("Sites: ", nsites)
+			print '%-21s %-6s' % ("Unique patterns: ", unique_patterns)
+			print "_______________________________________"
+			print ""
+			print '%-21s %-6s' % ("Beast option:", "Time:")
+			print ""
+		
+			for key, value in sorted_time:
+				print '%-21s %-4s %s' % (key, value, "seconds")
+			print "_______________________________________"
+			print ""	
+
+		# Append results to output file
+		output = open('%s' % options.output_file, "a")
+		output.write("\n")
+		output.write("\n")
+		output.write("_______________________________________\n")
+		output.write("\n")
+		output.write("File: " '%s''\n' % file)
+		output.write("Sequences: " '%s''\n' % ntaxa)
+		output.write("Sites: " '%s''\n' % nsites)
+		output.write("Unique patterns: " '%s''\n' % unique_patterns)
+		output.write("_______________________________________\n")
+		output.write("\n")
+		output.write('%-21s %-6s''\n' % ("Beast option:", "Time:"))
+		output.write("\n")
+		for key, value in sorted_time:
+			output.write('%-21s %-4s %s''\n' % (key, value, "seconds"))
+		output.write("_______________________________________\n")
+		output.write("\n")
+		output.close()	
+		
+		# Write test results to a file that can be sourced by R
+		if options.devel == True:
+			r_output = open("output.R", "a")
+			for key, value in time_for_R:
+				# Replace all "non word" character with "_".
+				mod_key = key.replace("-", '_').replace(" ", "_")
+				r_output.write('%s''_''%s''%s''%s''\n' % (file, mod_key, " <- ", value))
+			r_output.close()
+
+		# If "-r", run the analysis, with original chain length, after the test. Only the last input file will be analysed.
+		if options.run == True:
+			option = sorted_time[0]
+			args = ["beast", "-overwrite", "-seed 666", option[0], file] 
+			subprocess.Popen(args).wait()
+			exit()
+
+
+
+# Prepare the Beast input files
+def prepare_input():
+		# Read the xml iput files and change "chainLength" to an apropriate value
+	for file in options.input_files:
+		out = parse(file)
+		node = out.getElementsByTagName('mcmc')
+		node[0].setAttribute('chainLength', '%s' % options.chain_length)
+		
+		# Create a hidden file and save the modified xml data.
+		new_file_name = '.%s' % file
+		xml_file = open(new_file_name, "w")
+		out.writexml(xml_file, encoding="utf-8")
+		xml_file.close()
+		
+		
+
+if __name__ == '__main__':
+#	file_format()
+	beagle_info()
+	java_version()
+	system_info()
+	prepare_input()
+	beast_test()						# Run beast with different options
+
+
