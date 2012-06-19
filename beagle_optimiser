@@ -66,36 +66,36 @@ parser = OptionParser(usage=usage, version="%prog v.0.9.4")
 
 # Run the program with minimum or no output to stdout
 parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=False,
-					help="Minimum or no output to STDOUT")
+					help="Minimum or no output to STDOUT.")
 
 # Run beast with the best speed setings immediately after test
 parser.add_option("-r", "--run",  action="store_true", dest="run", default=False,
-					help="Run beast with the best speed settings immediately after the test")	
+					help="Run beast with the best speed settings immediately after the test.")	
 
 # Set the name of the output file
 parser.add_option("-f", "--file", dest="output_file", metavar="FILE", default="bo_output.txt",
-					help="Write output to FILE [%default]")
+					help="Write output to FILE [%default].")
 
 # Set the name for the directory to store temp files in
 parser.add_option("-t", "--tmpdir", dest="tmp_dir", metavar="NAME", default=".bss_tmp",
 					help="Name of temporary directory for output files. "
 					"This directory will be removed after the beagle tests are done if the "
-					"--dev flag was not invoked [%default]")
+					"--dev flag was not invoked [%default].")
 
 # Set the chainlength to use for the tests
 parser.add_option("-n", "--ngen", type="int", metavar="N", dest="chain_length", default="10000",
-					help="Chainlength for the Beast runs [%default]")
+					help="Chainlength for the Beast runs [%default].")
 
 # Do not test beast with the "-Beagle_GPU" option
 parser.add_option("--nogpu", action="store_false", default=True, dest="gpu",
-					help='Do not use the "-Beagle_GPU" flag in the test')
+					help='Do not use the "-Beagle_GPU" flag in the test.')
 
 # Run the program in dev. mode (more output, all tmp-files saved)
 parser.add_option("-d", "--dev", action="store_true", default=False, dest="devel",
-					help="Produce more output to STDOUT and save all temporary files")
+					help="Produce more output to STDOUT and save all temporary files.")
 				
 parser.add_option("-i", "--input", action="callback", callback=in_files, dest="input_files",
-					help="Followed by one or several input files")
+					help="Followed by one or several input files.")
 
 # TODO: seed
 

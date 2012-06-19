@@ -1,0 +1,67 @@
+# Introduction
+Beagle_optimiser_0.9.2 is a program written in Python 
+that takes an XML input file prepared for BEAST, and 
+finds the beagle option that will result in the 
+shortest analysis time of that file. You can find out 
+more about the program in the open laboratory notebook
+at http://matstopel.se/notebook/beagle-optimiser.
+
+
+
+# The program has the following functions:
+
+	mats@Slartibartfasts:~/project/beagle/test$ ./beagle_optimiser_0.9 -h
+
+		Usage: 
+		beagle_optimiser_0.9.2 [-r] [-q] [-d] [--nogpu] [-f] FILE [-t] NAME [-n] N -i [file1 file2 ..]
+
+		Options:
+		--version				show program's version number and exit
+		-h, --help				show this help message and exit
+		-q, --quiet				Minimum or no output to STDOUT
+		-r, --run				Run beast with the best speed settings immediately
+								after the test
+ 		-f FILE, --file=FILE	Write output to FILE [bo_output.txt]
+		-t NAME, --tmpdir=NAME
+								Name of temporary directory for output files. This
+								directory will be removed after the beagle tests are
+								done if the --dev flag was not invoked [.bss_tmp]
+		-n N, --ngen=N			Chainlength for the Beast runs [10000]
+		--nogpu					Do not use the "-Beagle_GPU" flag in the test
+		-d, --dev				Produce more output to STDOUT and save all temporary
+								files
+		-i, --input				Followed by one or several input files
+
+
+
+# Output from the program looks like this:
+_______________________________________
+
+File: benchmark1.xml
+Sequences: 1441
+Sites: 987
+Unique patterns: 593
+_______________________________________
+
+Beast option:         Time:
+
+-beagle_SSE           199.66 seconds
+-beagle_CPU           204.72 seconds
+-beagle_instances 2   211.04 seconds
+-beagle_instances 10  223.12 seconds
+-beagle_instances 8   227.52 seconds
+-beagle_instances 4   233.74 seconds
+-beagle_instances 12  237.6 seconds
+-beagle_instances 16  245.73 seconds
+-beagle_instances 14  253.28 seconds
+-beagle_GPU           263.08 seconds
+ Native library       386.7 seconds
+-java                 389.06 seconds
+ _______________________________________
+
+
+
+# TODO
+Use a random seed when the "-r" option is used.
+Make BO work with MrBayes 3.2
+Test different beagle options in combination (is that relevant?)
