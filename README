@@ -1,5 +1,5 @@
 # Introduction
-Beagle_optimiser_0.9.2 is a program written in Python 
+Beagle_optimiser is a program written in Python 
 that takes an XML input file prepared for BEAST, and 
 finds the beagle option that will result in the 
 shortest analysis time of that file. You can find out 
