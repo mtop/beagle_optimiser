@@ -123,7 +123,8 @@ def file_format():
 
 		if 'NEXUS' in format:
 			print "This is a Nexus file"        # Devel.
-			break
+			prepare_mrbayes_input()
+#			break
 
 
 # Gather information about the available BEAGLE resources on the system
@@ -295,7 +296,7 @@ def beast_test():
 
 # Prepare the Beast input files
 def prepare_beast_input():
-		# Read the xml iput files and change "chainLength" to an apropriate value
+		# Read the xml input files and change "chainLength" to an apropriate value
 	for file in options.input_files:
 		out = parse(file)
 		node = out.getElementsByTagName('mcmc')
@@ -306,9 +307,24 @@ def prepare_beast_input():
 		xml_file = open(new_file_name, "w")
 		out.writexml(xml_file, encoding="utf-8")
 		xml_file.close()
-		
-		
 
+
+
+# Prepare the MrBayes input files
+def prepare_mrbayes_input():
+	# Read the NEXUS input files and remove Beagle related settings, if any.
+	for file in options.input_files:
+		f = open(file, 'r')
+		input = f.readlines()
+		# Create a hidden file and save the modified NEXUS file.
+		new_file_name = '.%s' % file
+		nexus_file = open(new_file_name, "w")
+		for line in input:
+			if 'beagle' not in line.lower():		# Case insensitive search for the strint 'Beagle' in input file
+				nexus_file.write(line)
+		nexus_file.close()
+
+		
 if __name__ == '__main__':
 	beagle_info()
 	system_info()
