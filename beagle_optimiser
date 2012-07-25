@@ -105,6 +105,7 @@ parser.add_option("-i", "--input", action="callback", callback=in_files, dest="i
 
 # Miscellaneous
 beast_option = ["", "-java", "-beagle_GPU", "-beagle_CPU", "-beagle_SSE", "-beagle_instances 2", "-beagle_instances 4","-beagle_instances 8", "-beagle_instances 10", "-beagle_instances 12", "-beagle_instances 14", "-beagle_instances 16"]
+mrbayes_option = ["set Beagledevice = GPU", "set Beaglesse = Yes", "set Beagleopenmp = Yes;"]
 
 
 
@@ -124,6 +125,7 @@ def file_format():
 		if 'NEXUS' in format:
 			print "This is a Nexus file"        # Devel.
 			prepare_mrbayes_input()
+			mrbayes_test()
 #			break
 
 
@@ -187,8 +189,40 @@ def system_info():
 
 
 
+# Run the MrBayes beagle tests
+def mrbayes_test():
+	for file in options.input_files:
+		# Check if the GPU should be used
+		if options.gpu == False:
+			mrbayes_option.pop(0)
+		# Read in the modified NEXUS input file.
+		f = open('.%s' % file, 'r')
+		input = f.readlines()
+		f.close()
+		# Open the same file again in order add the various Beagle settings.
+		for option in mrbayes_option:
+			nexus_file = open('.%s' % file, "w")
+			for line in input:
+				# Case insensitive search for the strint 'Begin mrbayes;' in the input file
+				if 'begin mrbayes;' not in line.lower():
+					nexus_file.write(line)
+				if 'begin mrbayes;' in line.lower():
+					nexus_file.write(line)
+					nexus_file.write('set UseBeagle = Yes;\n')
+					nexus_file.write(option)
+			run_mb()
+			nexus_file.close()
+
+
+
+def run_mb():
+	print "Will run mb here"
+		
+
+
 # Run the Beast beagle tests
 def beast_test():
+	# Check if the GPU should be used
 	if options.gpu == False:
 		beast_option.pop(0)
 	
