@@ -191,6 +191,7 @@ def system_info():
 
 # Run the MrBayes beagle tests
 def mrbayes_test():
+	time_dict = {}
 	for file in options.input_files:
 		# Check if the GPU should be used
 		if options.gpu == False:
@@ -211,17 +212,60 @@ def mrbayes_test():
 					nexus_file.write('set UseBeagle = Yes;\n')
 					nexus_file.write(option)
 			nexus_file.close()
-			run_mb(file)
+
+			# Run MrBayes
+#			run_mb(file, option)
+			args = ["mb", '.%s' % file]
+			t0 = os.times()[2] + os.times()[3]
+			out = subprocess.Popen(args).wait()
+			cpu_time = os.times()[2] + os.times()[3] - t0
+
+			#"Execution time" is stored in the dictionary time_dict.
+			time_dict[option] = cpu_time
+
+	mrbayes_output(time_dict, file) 
 
 
 
-def run_mb(file):
-	print "Will run mb here"
-	args = ["mb", '.%s' % file]
-	t0 = os.times()[2] + os.times()[3]
-	out = subprocess.Popen(args).wait()
-	cpu_time = os.times()[2] + os.times()[3] - t0
-	print cpu_time									# Devel.
+# Write output from the MrBayes tests to file and STDOUT
+def mrbayes_output(time_dict, file):
+	# Append results to output file
+
+	sorted_time = sorted(time_dict.items(), key=itemgetter(1))
+
+	output = open('%s' % options.output_file, "a")
+	output.write("\n")
+	output.write("\n")
+	output.write("_______________________________________\n")
+	output.write("\n")
+	output.write("File: " '%s''\n' % file)
+#	output.write("Sequences: " '%s''\n' % ntaxa)
+#	output.write("Sites: " '%s''\n' % nsites)
+#	output.write("Unique patterns: " '%s''\n' % unique_patterns)
+	output.write("_______________________________________\n")
+	output.write("\n")
+	output.write('%-21s %-6s''\n' % ("Beagle option:", "Time:"))
+	output.write("\n")
+	for key, value in sorted_time:
+		output.write('%-21s %-4s %s''\n' % (key, value, "seconds"))
+#	output.write('%-21s %-4s %s''\n' % (option, time, "seconds"))
+	output.write("_______________________________________\n")
+	output.write("\n")
+	output.close()
+
+
+
+#def run_mb(file, option):
+#	print "Will run mb here"		# Devel.
+#	args = ["mb", '.%s' % file]
+#	t0 = os.times()[2] + os.times()[3]
+#	out = subprocess.Popen(args).wait()
+#	cpu_time = os.times()[2] + os.times()[3] - t0
+
+	# "Execution time" is stored in the dictionary time_dict.
+#	time_dict[option] = cpu_time
+#	return time_dict
+#	return cpu_time									# Devel.
 
 		
 
