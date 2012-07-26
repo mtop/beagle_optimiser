@@ -214,7 +214,6 @@ def mrbayes_test():
 			nexus_file.close()
 
 			# Run MrBayes
-#			run_mb(file, option)
 			args = ["mb", '.%s' % file]
 			t0 = os.times()[2] + os.times()[3]
 			out = subprocess.Popen(args).wait()
@@ -248,26 +247,20 @@ def mrbayes_output(time_dict, file):
 	output.write("\n")
 	for key, value in sorted_time:
 		output.write('%-21s %-4s %s''\n' % (key, value, "seconds"))
-#	output.write('%-21s %-4s %s''\n' % (option, time, "seconds"))
 	output.write("_______________________________________\n")
 	output.write("\n")
 	output.close()
 
+	# Print results to STDOUT
+	if options.run == False:
+		print "_______________________________________\n"
+		print "File: " '%s' % file
+		print "_______________________________________\n"
+		print '%-21s %-6s''\n' % ("Beagle option:", "Time:")
+		for key, value in sorted_time:
+			print '%-21s %-4s %s' % (key, value, "seconds")
+		print "_______________________________________\n"
 
-
-#def run_mb(file, option):
-#	print "Will run mb here"		# Devel.
-#	args = ["mb", '.%s' % file]
-#	t0 = os.times()[2] + os.times()[3]
-#	out = subprocess.Popen(args).wait()
-#	cpu_time = os.times()[2] + os.times()[3] - t0
-
-	# "Execution time" is stored in the dictionary time_dict.
-#	time_dict[option] = cpu_time
-#	return time_dict
-#	return cpu_time									# Devel.
-
-		
 
 
 # Run the Beast beagle tests
