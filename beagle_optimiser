@@ -396,9 +396,17 @@ def prepare_mrbayes_input():
 		new_file_name = '.%s' % file
 		nexus_file = open(new_file_name, "w")
 		for line in input:
-			if 'beagle' not in line.lower():		# Case insensitive search for the strint 'Beagle' in input file
+			# Case insensitive search for the strint 'Beagle' in input file.
+			if 'beagle' not in line.lower() and 'ngen' not in line.lower():
 				nexus_file.write(line)
+			# Change "ngen" to the default, or user defined value.
+			if 'ngen' in line.lower():
+				new_mcmc = (line.split(';')[0]+" ngen=%s" % options.chain_length+";"+"\n")
+				nexus_file.write(new_mcmc)
+				
+
 		nexus_file.close()
+		break
 
 		
 if __name__ == '__main__':
