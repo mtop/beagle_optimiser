@@ -105,7 +105,7 @@ parser.add_option("-i", "--input", action="callback", callback=in_files, dest="i
 
 # Miscellaneous
 beast_option = ["", "-java", "-beagle_GPU", "-beagle_CPU", "-beagle_SSE", "-beagle_instances 2", "-beagle_instances 4","-beagle_instances 8", "-beagle_instances 10", "-beagle_instances 12", "-beagle_instances 14", "-beagle_instances 16"]
-mrbayes_option = ["set Beagledevice = GPU;", "set Beaglesse = Yes;", "set Beagleopenmp = Yes;"]
+mrbayes_option = ["set Usebeagle = No;", "set Usebeagle = Yes;", "set Beagledevice = GPU;", "set Beaglesse = Yes;", "set Beagleopenmp = Yes;"]
 
 
 
@@ -209,7 +209,6 @@ def mrbayes_test():
 					nexus_file.write(line)
 				if 'begin mrbayes;' in line.lower():
 					nexus_file.write(line)
-					nexus_file.write('set UseBeagle = Yes;\n')
 					nexus_file.write(option)
 			nexus_file.close()
 
@@ -256,9 +255,9 @@ def mrbayes_output(time_dict, file):
 		print "_______________________________________\n"
 		print "File: " '%s' % file
 		print "_______________________________________\n"
-		print '%-21s %-6s''\n' % ("Beagle option:", "Time:")
+		print '%-25s %-6s''\n' % ("Beagle option:", "Time:")
 		for key, value in sorted_time:
-			print '%-21s %-4s %s' % (key, value, "seconds")
+			print '%-25s %-4s %s' % (key, value, "seconds")
 		print "_______________________________________\n"
 
 
