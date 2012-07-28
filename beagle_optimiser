@@ -62,13 +62,13 @@ usage = "\n		%prog [-r] [-q] [-d] [--nogpu] [-f] FILE [-t] NAME [-n] N -i [file1
 #epilog = """ TODO
 #description = """ TODO
 
-parser = OptionParser(usage=usage, version="%prog v.0.9.4")
+parser = OptionParser(usage=usage, version="%prog v.0.9.5")
 
 # Run the program with minimum or no output to stdout
 parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=False,
 					help="Minimum or no output to STDOUT.")
 
-# Run beast with the best speed setings immediately after test
+# Run analysis of the last input file with the best speed setings immediately after test
 parser.add_option("-r", "--run",  action="store_true", dest="run", default=False,
 					help="Run beast with the best speed settings immediately after the test.")	
 
@@ -93,7 +93,8 @@ parser.add_option("--nogpu", action="store_false", default=True, dest="gpu",
 # Run the program in dev. mode (more output, all tmp-files saved)
 parser.add_option("-d", "--dev", action="store_true", default=False, dest="devel",
 					help="Produce more output to STDOUT and save all temporary files.")
-				
+
+# Define the input files to analyse
 parser.add_option("-i", "--input", action="callback", callback=in_files, dest="input_files",
 					help="Followed by one or several input files.")
 
@@ -126,7 +127,7 @@ def file_format():
 			print "This is a Nexus file"        # Devel.
 			prepare_mrbayes_input()
 			mrbayes_test()
-#			break
+
 
 
 # Gather information about the available BEAGLE resources on the system
@@ -403,10 +404,7 @@ def prepare_mrbayes_input():
 			if 'ngen' in line.lower():
 				new_mcmc = (line.split(';')[0]+" ngen=%s" % options.chain_length+";"+"\n")
 				nexus_file.write(new_mcmc)
-				
-
 		nexus_file.close()
-		break
 
 		
 if __name__ == '__main__':
