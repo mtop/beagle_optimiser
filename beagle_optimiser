@@ -210,6 +210,7 @@ def mrbayes_test():
 					nexus_file.write(line)
 				if 'begin mrbayes;' in line.lower():
 					nexus_file.write(line)
+					nexus_file.write("set Usebeagle = Yes;\n")
 					nexus_file.write(option)
 			nexus_file.close()
 
