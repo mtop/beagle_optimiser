@@ -62,7 +62,7 @@ usage = "\n		%prog [-r] [-q] [-d] [--nogpu] [-f] FILE [-t] NAME [-n] N -i [file1
 #epilog = """ TODO
 #description = """ TODO
 
-parser = OptionParser(usage=usage, version="%prog v.0.9.5")
+parser = OptionParser(usage=usage, version="%prog v.0.9.6")
 
 # Run the program with minimum or no output to stdout
 parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=False,
