@@ -126,8 +126,8 @@ def file_format():
 
         if 'NEXUS' in format:
             print "This is a Nexus file"        # Devel.
-            prepare_mrbayes_input()
-            mrbayes_test()
+            modified_file = prepare_mrbayes_input( original_file )
+            mrbayes_test( original_file, modified_file )
 
 
 
@@ -192,41 +192,40 @@ def system_info():
 
 
 # Run the MrBayes beagle tests
-def mrbayes_test():
+def mrbayes_test( original_file, modified_file ):
     time_dict = {}
-    for file in options.input_files:
-        # Check if the GPU should be used
-        if options.gpu == False:
-            mrbayes_option.pop(0)
-        # Read in the modified NEXUS input file.
-        f = open('.%s' % file, 'r')
-        input = f.readlines()
-        f.close()
-        # Open the same file again in order add the various Beagle settings.
-        for option in mrbayes_option:
-            nexus_file = open('.%s' % file, "w")
-            for line in input:
-                # Case insensitive search for the strint 'Begin mrbayes;' in the input file
-                if 'begin mrbayes;' not in line.lower():
-                    nexus_file.write(line)
-                if 'begin mrbayes;' in line.lower():
-                    nexus_file.write(line)
-                    nexus_file.write("set Usebeagle = Yes;\n")
-                    nexus_file.write(option)
-            nexus_file.close()
+    # Check if the GPU should be used
+    if options.gpu == False:
+        mrbayes_option.pop(0)
+    # Read in the modified NEXUS input file.
+    f = open(modified_file, 'r')
+    input = f.readlines()
+    f.close()
+    # Open the same file again in order add the various Beagle settings.
+    for option in mrbayes_option:
+        nexus_file = open('.%s' % file, "w")
+        for line in input:
+            # Case insensitive search for the strint 'Begin mrbayes;' in the input file
+            if 'begin mrbayes;' not in line.lower():
+                nexus_file.write(line)
+            if 'begin mrbayes;' in line.lower():
+                nexus_file.write(line)
+                nexus_file.write("set Usebeagle = Yes;\n")
+                nexus_file.write(option)
+        nexus_file.close()
 
-            # Run MrBayes
-            args = ["mb", '.%s' % file]
-            t0 = os.times()[2] + os.times()[3]
-            out = subprocess.Popen(args).wait()
-            cpu_time = os.times()[2] + os.times()[3] - t0
+        # Run MrBayes
+        args = ["mb", modified_file ]
+        t0 = os.times()[2] + os.times()[3]
+        devnull = open(os.devnull,'w')
+        print "Running mrbayes test with option: %s" % option
+        out = subprocess.Popen(args,stdout=devnull,stderr=devnull).wait()
+        cpu_time = os.times()[2] + os.times()[3] - t0
 
-            #"Execution time" is stored in the dictionary time_dict.
-            time_dict[option] = cpu_time
+        #"Execution time" is stored in the dictionary time_dict.
+        time_dict[option] = cpu_time
 
-    mrbayes_output(time_dict, file)
-
-
+    mrbayes_output(time_dict, original_file)
 
 # Write output from the MrBayes tests to file and STDOUT
 def mrbayes_output(time_dict, file):
@@ -390,23 +389,24 @@ def prepare_beast_input( input_file ):
     return modified_file
 
 # Prepare the MrBayes input files
-def prepare_mrbayes_input():
+def prepare_mrbayes_input( original_file ):
     # Read the NEXUS input files and remove Beagle related settings, if any.
-    for file in options.input_files:
-        f = open(file, 'r')
-        input = f.readlines()
-        # Create a hidden file and save the modified NEXUS file.
-        new_file_name = '.%s' % file
-        nexus_file = open(new_file_name, "w")
-        for line in input:
-            # Case insensitive search for the strint 'Beagle' in input file.
-            if 'beagle' not in line.lower() and 'ngen' not in line.lower():
-                nexus_file.write(line)
-            # Change "ngen" to the default, or user defined value.
-            if 'ngen' in line.lower():
-                new_mcmc = (line.split(';')[0]+" ngen=%s" % options.chain_length+";"+"\n")
-                nexus_file.write(new_mcmc)
-        nexus_file.close()
+    f = open(original_file, 'r')
+    input = f.readlines()
+    # Create a hidden file and save the modified NEXUS file.
+    head, tail = split( original_file )
+    modified_file = join( head, '.' + tail )
+    nexus_file = open(modified_file, "w")
+    for line in input:
+        # Case insensitive search for the strint 'Beagle' in input file.
+        if 'beagle' not in line.lower() and 'ngen' not in line.lower():
+            nexus_file.write(line)
+        # Change "ngen" to the default, or user defined value.
+        if 'ngen' in line.lower():
+            new_mcmc = (line.split(';')[0]+" ngen=%s" % options.chain_length+";"+"\n")
+            nexus_file.write(new_mcmc)
+    nexus_file.close()
+    return modified_file
 
 
 if __name__ == '__main__':
