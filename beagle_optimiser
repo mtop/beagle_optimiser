@@ -300,6 +300,7 @@ def beast_test( original_file, modified_file ):
         args = ["beast", "-overwrite", "-seed 666", option, modified_file]
         t0 = os.times()[2] + os.times()[3]
         devnull = open(os.devnull,'w')
+        print "Running beast test for option: %s" % option
         out = subprocess.Popen(args,stdout=devnull,stderr=devnull).wait()
         cpu_time = os.times()[2] + os.times()[3] - t0
 
